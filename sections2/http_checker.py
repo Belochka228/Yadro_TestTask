@@ -1,12 +1,4 @@
 #!/usr/bin/env python3
-"""
-http_checker.py — выполняет HTTP-запросы к https://httpstat.us
-и обрабатывает ответы по группам статус-кодов.
-
-Использование:
-    python3 http_checker.py
-"""
-
 import logging
 import sys
 
