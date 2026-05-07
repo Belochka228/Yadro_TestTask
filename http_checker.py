@@ -21,17 +21,17 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 TEST_CODES = [200, 301, 404, 500, 102]
 
-BASE_URL = "https://httpstat.us"
+BASE_URL = "https://httpbin.org/status"
 
 REQUEST_TIMEOUT = 10
 
 
 
 def make_request(status_code: int) -> requests.Response:
-    """Выполняет GET-запрос к https://httpstat.us/<status_code>."""
     url = f"{BASE_URL}/{status_code}"
     logger.info("→ Запрос: GET %s", url)
-    response = requests.get(url, timeout=REQUEST_TIMEOUT)
+    headers = {"User-Agent": "Mozilla/5.0"}
+    response = requests.get(url, timeout=REQUEST_TIMEOUT, headers=headers, allow_redirects=True)
     return response
 
 
