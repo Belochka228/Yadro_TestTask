@@ -1,0 +1,6 @@
+version: "3.9"
+
+services:
+  http-checker:
+    build: .
+    container_name: http_checker
