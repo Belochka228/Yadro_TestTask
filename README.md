@@ -57,3 +57,27 @@ python3 http_checker.py
 
 > Раздел 2 добавит Dockerfile и docker-compose.yml.  
 > Раздел 3 добавит Ansible playbook для деплоя.
+
+
+## Раздел 2: Docker
+
+Скрипт из Раздела 1 упакован в Docker-контейнер.
+
+### Что внутри контейнера
+- Python 3.13-slim
+- зависимости из requirements.txt
+- http_checker.py
+
+### Запуск
+
+```bash
+cd section2
+docker compose up --build
+```
+
+### Остановка
+
+```bash
+docker compose down
+```
+
