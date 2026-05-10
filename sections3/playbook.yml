@@ -1,0 +1,31 @@
+---
+- name: Deploy http-checker container
+  hosts: local
+  become: false
+
+  vars:
+    project_dir: "{{ playbook_dir }}/../sections2"
+    container_name: http_checker
+
+  tasks:
+    - name: Build and run container with docker compose
+      community.docker.docker_compose_v2:
+        project_src: "{{ project_dir }}"
+        state: present
+        build: always
+
+    - name: Wait for container to finish
+      community.docker.docker_container_info:
+        name: "{{ container_name }}"
+      register: container_info
+      until: container_info.container.State.Status != "running"
+      retries: 30
+      delay: 2
+
+    - name: Show container logs
+      command: docker logs {{ container_name }}
+      register: logs
+
+    - name: Print logs
+      debug:
+        msg: "{{ logs.stdout_lines }}"
