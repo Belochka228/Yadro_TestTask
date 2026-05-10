@@ -93,6 +93,18 @@
       retries: 30
       delay: 2
 
+    - name: Check container exit code
+      community.docker.docker_container_info:
+        name: "{{ container_name }}"
+      register: container_final
+
+    - name: Verify script completed successfully
+      assert:
+        that:
+          - container_final.container.State.ExitCode == 0
+        fail_msg: "Container exited with error, code: {{ container_final.container.State.ExitCode }}"
+        success_msg: "Script completed successfully, exit code: 0"
+
     - name: Show container logs
       command: docker logs {{ container_name }}
       register: logs
