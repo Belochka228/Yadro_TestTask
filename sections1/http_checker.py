@@ -1,12 +1,4 @@
 #!/usr/bin/env python3
-"""
-http_checker.py — выполняет HTTP-запросы к https://httpstat.us
-и обрабатывает ответы по группам статус-кодов.
-
-Использование:
-    python3 http_checker.py
-"""
-
 import logging
 import sys
 
@@ -19,6 +11,7 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)],
 )
 logger = logging.getLogger(__name__)
+
 TEST_CODES = [200, 301, 404, 500, 102]
 
 BASE_URL = "https://httpbin.org/status"
@@ -26,21 +19,15 @@ BASE_URL = "https://httpbin.org/status"
 REQUEST_TIMEOUT = 10
 
 
-
 def make_request(status_code: int) -> requests.Response:
     url = f"{BASE_URL}/{status_code}"
-    logger.info("→ Запрос: GET %s", url)
+    logger.info(" Запрос: GET %s", url)
     headers = {"User-Agent": "Mozilla/5.0"}
     response = requests.get(url, timeout=REQUEST_TIMEOUT, headers=headers, allow_redirects=True)
     return response
 
 
 def handle_response(response: requests.Response) -> None:
-    """
-    Обрабатывает ответ по группам:
-      1xx, 2xx, 3xx → логируем содержимое
-      4xx, 5xx      → бросаем исключение
-    """
     code = response.status_code
     body = response.text.strip()
 
