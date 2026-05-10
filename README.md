@@ -1,83 +1,105 @@
-# HTTP Checker
+# Yadro TestTask — Пошаговая автоматизация с Bash/Python, Docker и Ansible
 
-Скрипт выполняет HTTP-запросы к сервису [httpstat.us](https://httpstat.us) и обрабатывает ответы по группам статус-кодов.
+## Структура проекта
 
-## Логика обработки
+```
+.
+├── sections1/          # Раздел 1: Python скрипт
+│   ├── http_checker.py
+│   └── requirements.txt
+├── sections2/          # Раздел 2: Docker
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   ├── http_checker.py
+│   └── requirements.txt
+└── sections3/          # Раздел 3: Ansible
+    ├── inventory.ini
+    └── playbook.yml
+```
+
+---
+
+## Раздел 1: Python скрипт
+
+### Что сделано
+Разработан скрипт `http_checker.py`, который выполняет 5 HTTP-запросов и обрабатывает ответы по группам статус-кодов:
 
 | Диапазон | Действие |
 |----------|----------|
 | 1xx, 2xx, 3xx | Логирует статус-код и тело ответа (`INFO`) |
 | 4xx, 5xx | Генерирует `RuntimeError` и логирует его (`ERROR`) |
 
-## Установка зависимостей
+### Проблемы и решения
+- **Сервис `httpstat.us`** — изначально использовался согласно ТЗ, однако при тестировании на виртуальной машине (Ubuntu 24.04, Proxmox) сервис блокировал все входящие запросы с ошибкой `Connection aborted`. Принято решение заменить на `httpbin.org/status` — он выполняет аналогичную функцию и работает стабильно.
 
+### Запуск
 ```bash
 pip install -r requirements.txt
-```
-
-## Запуск
-
-```bash
 python3 http_checker.py
 ```
 
-## Пример вывода
-
-```
-2025-05-07 12:00:00 [INFO] ════════════════════════════════════════
-2025-05-07 12:00:00 [INFO] Начало проверки 5 запросов
-2025-05-07 12:00:00 [INFO] ════════════════════════════════════════
-2025-05-07 12:00:00 [INFO] ──────────────────────────────────────
-2025-05-07 12:00:01 [INFO]  Запрос: GET https://httpstat.us/200
-2025-05-07 12:00:01 [INFO]  [200] Успешно | Тело ответа: 200 OK
-2025-05-07 12:00:01 [INFO] ──────────────────────────────────────
-2025-05-07 12:00:02 [INFO]  Запрос: GET https://httpstat.us/301
-2025-05-07 12:00:02 [INFO]  [301] Успешно | Тело ответа: 301 Moved Permanently
-2025-05-07 12:00:02 [INFO] ──────────────────────────────────────
-2025-05-07 12:00:03 [INFO]  Запрос: GET https://httpstat.us/404
-2025-05-07 12:00:03 [ERROR]  Исключение: HTTP-ошибка 404: 404 Not Found
-2025-05-07 12:00:03 [INFO] ──────────────────────────────────────
-2025-05-07 12:00:04 [INFO]  Запрос: GET https://httpstat.us/500
-2025-05-07 12:00:04 [ERROR]  Исключение: HTTP-ошибка 500: 500 Internal Server Error
-2025-05-07 12:00:04 [INFO] ──────────────────────────────────────
-2025-05-07 12:00:05 [INFO]  Запрос: GET https://httpstat.us/102
-2025-05-07 12:00:05 [INFO]  [102] Успешно | Тело ответа: 102 Processing
-2025-05-07 12:00:05 [INFO] ════════════════════════════════════════
-2025-05-07 12:00:05 [INFO] Проверка завершена
-```
-
-## Структура проекта (Раздел 1)
-
-```
-.
-├── http_checker.py   # скрипт
-├── requirements.txt  # зависимости 
-└── README.md
-```
-
-> Раздел 2 добавит Dockerfile и docker-compose.yml.  
-> Раздел 3 добавит Ansible playbook для деплоя.
-
+---
 
 ## Раздел 2: Docker
 
-Скрипт из Раздела 1 упакован в Docker-контейнер.
+### Что сделано
+- Написан `Dockerfile` на базе `ubuntu:22.04` согласно требованиям ТЗ
+- Устанавливаются зависимости через `apt` и `pip3`
+- Скрипт запускается автоматически при старте контейнера
+- Настроен `docker-compose.yml` для удобного запуска
 
-### Что внутри контейнера
-- Python 3.13-slim
-- зависимости из requirements.txt
-- http_checker.py
+### Проблемы и решения
+- **Базовый образ** — изначально использовался `python:3.13-slim`, что не соответствовало ТЗ. Исправлено на `ubuntu:22.04`
+- **Устаревший параметр `version`** в `docker-compose.yml` — убран, так как вызывал предупреждения в новых версиях Docker Compose
 
 ### Запуск
-
 ```bash
-cd section2
+cd sections2
 docker compose up --build
+docker logs http_checker
 ```
 
-### Остановка
+---
 
+## Раздел 3: Ansible
+
+### Что сделано
+Написан `playbook.yml` с двумя play:
+
+**Play 1 — Установка Docker:**
+- Проверяет наличие Docker на хосте
+- Если Docker не установлен — устанавливает через apt (зависимости, GPG ключ, репозиторий, docker-ce)
+- Добавляет текущего пользователя в группу `docker`
+- Включает и запускает `docker.service`
+- Выводит версию Docker
+
+**Play 2 — Деплой контейнера:**
+- Собирает Docker образ через `docker compose`
+- Ожидает завершения работы контейнера
+- Выводит логи контейнера через Ansible (доп. задание)
+
+### Проблемы и решения
+- **Зависание `gather_facts`** — на WSL+Docker Desktop Ansible зависал на сборе фактов. Решено добавлением `gather_facts: false`
+- **Зависание `become: true`** — sudo через Ansible зависал в WSL окружении. Решено настройкой `NOPASSWD` в `/etc/sudoers`
+- **`ansible_user_id` не определён** без `gather_facts` — заменено на `lookup('env', 'USER')` для универсальности
+- **Тестирование реальной установки Docker** — проводилось на чистой Ubuntu 24.04 VM в Proxmox (IP: 192.168.10.118). Docker был предварительно удалён, после чего playbook успешно установил его с нуля
+
+### Запуск локально
 ```bash
-docker compose down
+cd sections3
+pip install ansible
+ansible-galaxy collection install community.docker
+ansible-playbook -i inventory.ini playbook.yml
 ```
 
+### Запуск на удалённом хосте
+Измените `inventory.ini`:
+```ini
+[local]
+<IP_АДРЕС> ansible_user=<ИМЯ_ПОЛЬЗОВАТЕЛЯ> ansible_connection=ssh
+```
+
+Затем:
+```bash
+ansible-playbook -i inventory.ini playbook.yml --ask-become-pass
+```
